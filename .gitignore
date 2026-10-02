@@ -1,0 +1,10 @@
+# Büyük ya da yeniden üretilebilir
+_npm/node_modules/
+apk/sdk/
+apk/is/
+apk/cikti/
+test/ekran/
+
+# İMZA ANAHTARI VE ŞİFRESİ — asla depoya girmez
+apk/*.jks
+apk/imza_sifre.txt

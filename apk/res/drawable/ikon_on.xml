@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2x2 tuş: üç gri tuş + turuncu "=" tuşu. Güvenli bölge (66dp daire) içinde: 32..76 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#8E8C85" android:pathData="M32,34h20v20h-20z M56,34h20v20h-20z M32,58h20v20h-20z" />
+    <path android:fillColor="#A8440B" android:pathData="M56,58h20v20h-20z" />
+    <path android:fillColor="#D2D0C9" android:pathData="M32,32h20v20h-20z M56,32h20v20h-20z M32,56h20v20h-20z" />
+    <path android:fillColor="#FF6A13" android:pathData="M56,56h20v20h-20z" />
+    <path android:fillColor="#222326" android:pathData="M60,62.5h12v2.6h-12z M60,67.9h12v2.6h-12z" />
+</vector>

@@ -1,0 +1,5 @@
+# Satır sonları her yerde LF kalsın (Windows otomatik CRLF çevirisine karşı)
+* text=auto eol=lf
+*.png binary
+*.woff2 binary
+*.jar binary

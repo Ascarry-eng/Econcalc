@@ -1,0 +1,9 @@
+Marjinal'in içinde dağıtılan üçüncü taraf yazılım ve yazı tipleri:
+
+- mathjs (Apache-2.0): mathjs.txt
+- nerdamer (MIT): nerdamer.txt
+- KaTeX (MIT): katex.txt
+- marked (MIT): marked.txt
+- Doto yazı tipi (OFL-1.1): doto.txt
+- IBM Plex Sans (OFL-1.1): ibm-plex-sans.txt
+- IBM Plex Sans Condensed (OFL-1.1): ibm-plex-sans-condensed.txt
