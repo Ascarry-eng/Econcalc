@@ -49,6 +49,9 @@ APK derlemek: `python apk/derle.py` → `apk/cikti/Marjinal.apk`. Gerekenler: JD
 İmza anahtarı (`apk/marjinal.jks`) ve şifresi (`apk/imza_sifre.txt`) depoda değildir; yoksa ilk derlemede
 yenisi üretilir. Aynı telefondaki uygulamayı güncellemek için hep aynı anahtar kullanılmalıdır.
 
-## Lisanslar
-Kullanılan kütüphane ve yazı tiplerinin lisansları `www/lib/lisanslar/` altında: math.js (Apache-2.0),
-nerdamer, KaTeX, marked (MIT), Doto ve IBM Plex (SIL OFL 1.1).
+## Lisans
+Marjinal'in kendi kodu **MIT** lisanslıdır ([LICENSE](LICENSE)): serbestçe kullanabilir, değiştirebilir,
+dağıtabilirsin; telif notunu koruman yeterli.
+
+İçinde dağıtılan kütüphane ve yazı tipleri kendi lisanslarıyla gelir (`www/lib/lisanslar/`):
+math.js (Apache-2.0), nerdamer, KaTeX, marked (MIT), Doto ve IBM Plex (SIL OFL 1.1).
