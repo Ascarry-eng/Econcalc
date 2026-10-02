@@ -531,6 +531,20 @@ $x = \dfrac{8(-1) - 3(-1)}{-5} = \dfrac{-5}{-5} = 1$, $\quad y = \dfrac{2(-1) - 
     },
   ];
 
+
+  // İngilizce modda başlık, özet ve metin konular_en.js'ten gelir; terim tablosu (İngilizce–Türkçe) aynı kalır
+  const L = window.L || ((tr) => tr);
+  if (window.DIL === "en" && window.KONU_EN) {
+    for (const k of KONULAR) {
+      const en = window.KONU_EN[k.id];
+      if (!en) continue;
+      if (en.ad) k.ad = en.ad;
+      if (en.ozet) k.ozet = en.ozet;
+      if (en.md) k.md = en.md;
+    }
+  }
+  const haftaYaz = (h) => L(`${h}. hafta`, `Week ${h}`);
+
   // Ders 28 Eylül 2026 Pazartesi başladı; tatiller hafta numarasını kaydırabilir (yaklaşık)
   const BASLANGIC = new Date(2026, 8, 28).getTime();
   function buHafta() {
@@ -541,17 +555,23 @@ $x = \dfrac{8(-1) - 3(-1)}{-5} = \dfrac{-5}{-5} = 1$, $\quad y = \dfrac{2(-1) - 
   const { el, isle, titret, depo } = Uyg;
   let kok;
 
-  function sozlukMd() {
+  // Terim tabloları kendi kutusunda: İngilizce modda Türkçe sütun bilerek kalır (sızıntı testi .terimler'i atlar)
+  function terimTablosu(satirlar, konuSutunu) {
+    const bas = konuSutunu ? L("| İngilizce | Türkçe | konu |\n|---|---|---|\n", "| English | Turkish | topic |\n|---|---|---|\n") : L("| İngilizce | Türkçe |\n|---|---|\n", "| English | Turkish |\n|---|---|\n");
+    return `<div class="terimler">${isle(bas + satirlar.join("\n"))}</div>`;
+  }
+
+  function sozlukHtml() {
     const tum = [];
     for (const k of KONULAR) for (const [en, tr] of k.terimler || []) tum.push([en, tr, k]);
     tum.sort((a, b) => a[0].localeCompare(b[0], "en"));
-    return "Ders İngilizce; sınav soruları da. Her terimin yanında geçtiği konu var.\n\n| İngilizce | Türkçe | konu |\n|---|---|---|\n" +
-      tum.map(([en, tr, k]) => `| ${en} | ${tr} | ${k.ek ? "Ek" : k.hafta + ". hafta"} |`).join("\n");
+    return isle(L("Ders İngilizce; sınav soruları da. Her terimin yanında geçtiği konu var.", "The course and its exams are in English. Each term shows the topic where it appears.")) +
+      terimTablosu(tum.map(([en, tr, k]) => `| ${en} | ${tr} | ${k.ek ? L("Ek", "Extra") : haftaYaz(k.hafta)} |`), true);
   }
 
   function listeCiz(filtre = "") {
     kok.innerHTML = "";
-    const ara = el("input", { class: "yuva", type: "search", placeholder: "Konu ya da terim ara (ör. esneklik, NPV)", value: filtre, "aria-label": "Konularda ara" });
+    const ara = el("input", { class: "yuva", type: "search", placeholder: L("Konu ya da terim ara (ör. esneklik, NPV)", "Search topics or terms (e.g. elasticity, NPV)"), value: filtre, "aria-label": L("Konularda ara", "Search topics") });
     let zaman;
     ara.addEventListener("input", () => { clearTimeout(zaman); zaman = setTimeout(() => { const pos = ara.selectionStart; listeCiz(ara.value); const y = kok.querySelector("input"); y.focus(); y.setSelectionRange(pos, pos); }, 250); });
     kok.append(el("div", { class: "ara-kutu" }, ara));
@@ -561,32 +581,33 @@ $x = \dfrac{8(-1) - 3(-1)}{-5} = \dfrac{-5}{-5} = 1$, $\quad y = \dfrac{2(-1) - 
     const uyar = (k) => !f || katla([k.ad, k.ozet, (k.terimler || []).flat().join(" "), k.md || ""].join(" ")).includes(f);
     let son = null;
     const grupBas = (sol, sag) => liste.append(el("div", { class: "grup-bas" }, el("span", { class: "hafta", text: sol }), el("span", { text: sag })));
+    const EK_BASLIK = () => grupBas(L("Ek", "Extra"), L("Müfredat dışı ama işe yarar", "Not in the syllabus, but useful"));
     for (const k of KONULAR) {
       if (!uyar(k) || (k.sinav && f)) continue;
       const grup = k.ek ? "ek" : k.hafta <= 8 ? "ilk" : "ikinci";
       if (grup !== son) {
-        if (grup === "ilk") grupBas("1–7. hafta", "Ara sınava kadar");
-        if (grup === "ikinci") grupBas("9–14. hafta", "Finale kadar");
-        if (grup === "ek") grupBas("Ek", "Müfredat dışı ama işe yarar");
+        if (grup === "ilk") grupBas(L("1–7. hafta", "Weeks 1–7"), L("Ara sınava kadar", "Up to the midterm"));
+        if (grup === "ikinci") grupBas(L("9–14. hafta", "Weeks 9–14"), L("Finale kadar", "Up to the final"));
+        if (grup === "ek") EK_BASLIK();
         son = grup;
       }
       if (k.sinav) {
-        liste.append(el("div", { class: "satir sinav" }, el("span", { class: "s-hafta", text: String(k.hafta) }), el("div", { class: "s-ad", text: k.ad + (bh === k.hafta ? " — bu hafta" : "") })));
+        liste.append(el("div", { class: "satir sinav" }, el("span", { class: "s-hafta", text: String(k.hafta) }), el("div", { class: "s-ad", text: k.ad + (bh === k.hafta ? L(" — bu hafta", " — this week") : "") })));
         continue;
       }
       liste.append(el("button", { class: "satir konu", type: "button", onclick: () => { titret(); Uyg.git("konular/" + k.id); } },
         el("span", { class: "s-hafta", text: k.ek ? "+" : String(k.hafta) }),
-        el("div", null, el("div", { class: "s-ad" }, k.ad, bh === k.hafta ? el("span", { class: "bu-hafta", text: "bu hafta" }) : null), el("div", { class: "s-not", text: k.ozet })),
+        el("div", null, el("div", { class: "s-ad" }, k.ad, bh === k.hafta ? el("span", { class: "bu-hafta", text: L("bu hafta", "this week") }) : null), el("div", { class: "s-not", text: k.ozet })),
         el("span", { class: "s-ok", "aria-hidden": "true" })));
     }
     if (!f || katla("sozluk ingilizce turkce terim glossary").includes(f) || KONULAR.some((k) => (k.terimler || []).some((t) => katla(t.join(" ")).includes(f)))) {
-      if (son !== "ek") grupBas("Ek", "Müfredat dışı ama işe yarar");
+      if (son !== "ek") EK_BASLIK();
       liste.append(el("button", { class: "satir konu", type: "button", onclick: () => Uyg.git("konular/sozluk") },
         el("span", { class: "s-hafta", text: "+" }),
-        el("div", null, el("div", { class: "s-ad", text: "Sözlük: İngilizce–Türkçe" }), el("div", { class: "s-not", text: "Tüm konulardaki terimler, alfabetik" })),
+        el("div", null, el("div", { class: "s-ad", text: L("Sözlük: İngilizce–Türkçe", "Glossary: English–Turkish") }), el("div", { class: "s-not", text: L("Tüm konulardaki terimler, alfabetik", "Terms from every topic, alphabetical") })),
         el("span", { class: "s-ok", "aria-hidden": "true" })));
     }
-    if (!liste.querySelector(".satir")) liste.append(el("div", { class: "bos-not", text: `“${filtre}” hiçbir konuda geçmiyor. Daha kısa bir kelime dene.` }));
+    if (!liste.querySelector(".satir")) liste.append(el("div", { class: "bos-not", text: L(`“${filtre}” hiçbir konuda geçmiyor. Daha kısa bir kelime dene.`, `“${filtre}” does not appear in any topic. Try a shorter word.`) }));
     kok.append(liste);
   }
 
@@ -611,7 +632,7 @@ $x = \dfrac{8(-1) - 3(-1)}{-5} = \dfrac{-5}{-5} = 1$, $\quad y = \dfrac{2(-1) - 
     const sayfa = el("div", { class: "konu-sayfa" });
     if (id === "sozluk") {
       const k = el("div", { class: "kagit" });
-      k.innerHTML = "<h1>Sözlük</h1>" + isle(sozlukMd());
+      k.innerHTML = `<h1>${L("Sözlük", "Glossary")}</h1>` + sozlukHtml();
       sayfa.append(k);
       kok.append(sayfa);
       kok.scrollTop = 0;
@@ -620,22 +641,22 @@ $x = \dfrac{8(-1) - 3(-1)}{-5} = \dfrac{-5}{-5} = 1$, $\quad y = \dfrac{2(-1) - 
     const konu = KONULAR.find((k) => String(k.id) === String(id));
     if (!konu || konu.sinav) { listeCiz(); return; }
     const k = el("div", { class: "kagit" });
-    const ust = konu.ek ? "Ek konu" : `${konu.hafta}. hafta`;
-    let md = konu.md;
-    if (konu.terimler && konu.terimler.length) md += "\n\n## Terimler\n\n| İngilizce | Türkçe |\n|---|---|\n" + konu.terimler.map(([en, tr]) => `| ${en} | ${tr} |`).join("\n");
-    k.innerHTML = `<p class="adim-baslik" style="color:var(--murekkep-soluk)">${ust}</p><h1>${Uyg.kacis(konu.ad)}</h1>` + isle(altAlta(md));
+    const ust = konu.ek ? L("Ek konu", "Extra topic") : haftaYaz(konu.hafta);
+    let html = `<p class="adim-baslik" style="color:var(--murekkep-soluk)">${ust}</p><h1>${Uyg.kacis(konu.ad)}</h1>` + isle(altAlta(konu.md));
+    if (konu.terimler && konu.terimler.length) html += `<h2>${L("Terimler", "Terms")}</h2>` + terimTablosu(konu.terimler.map(([en, tr]) => `| ${en} | ${tr} |`));
+    k.innerHTML = html;
     sayfa.append(k);
     kok.append(sayfa);
 
     const dug = el("div", { class: "konu-dugmeler" });
     for (const aid of konu.araclar || []) {
-      const a = aid === "matris" ? { ad: "Matris hesapları" } : ARACLAR.find((x) => x.id === aid);
+      const a = aid === "matris" ? { ad: L("Matris hesapları", "Matrix calculations") } : ARACLAR.find((x) => x.id === aid);
       if (a) dug.append(el("button", { class: "buyuk-tus gri", type: "button", text: a.ad, onclick: () => Uyg.git("araclar/" + aid) }));
     }
-    dug.append(el("button", { class: "buyuk-tus", type: "button", text: "Bu konuyu DeepSeek'e sor", onclick: () => Uyg.sorHazirla(`${ust}, “${konu.ad}” konusunda takıldım: `) }));
+    dug.append(el("button", { class: "buyuk-tus", type: "button", text: L("Bu konuyu DeepSeek'e sor", "Ask DeepSeek about this topic"), onclick: () => Uyg.sorHazirla(L(`${ust}, “${konu.ad}” konusunda takıldım: `, `${ust}, “${konu.ad}”: I'm stuck on `)) }));
     const sira = KONULAR.filter((x) => !x.sinav);
     const i = sira.indexOf(konu);
-    if (sira[i + 1]) dug.append(el("button", { class: "buyuk-tus gri", type: "button", text: "Sonraki: " + sira[i + 1].ad, onclick: () => Uyg.git("konular/" + sira[i + 1].id) }));
+    if (sira[i + 1]) dug.append(el("button", { class: "buyuk-tus gri", type: "button", text: L("Sonraki: ", "Next: ") + sira[i + 1].ad, onclick: () => Uyg.git("konular/" + sira[i + 1].id) }));
     kok.append(dug);
     kok.scrollTop = 0;
     depo.koy("sonKonu", konu.id);
@@ -645,9 +666,9 @@ $x = \dfrac{8(-1) - 3(-1)}{-5} = \dfrac{-5}{-5} = 1$, $\quad y = \dfrac{2(-1) - 
     kur() { kok = document.getElementById("konuKaydir"); },
     goster(alt) { if (alt) konuCiz(alt); else listeCiz(); },
     baslik(alt) {
-      if (alt === "sozluk") return "Sözlük";
+      if (alt === "sozluk") return L("Sözlük", "Glossary");
       const k = KONULAR.find((x) => String(x.id) === String(alt));
-      return k ? (k.ek ? k.ad : `${k.hafta}. hafta`) : "";
+      return k ? (k.ek ? k.ad : haftaYaz(k.hafta)) : "";
     },
   });
 

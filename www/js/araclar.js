@@ -2,8 +2,9 @@
 (function () {
   "use strict";
   const { el, depo, isle, titret } = Uyg;
+  const L = window.L || ((tr) => tr);
 
-  const MATRIS = { id: "matris", ad: "Matris hesapları", grup: "ek", not: "Determinant, ters, çarpım, Ax = b, Leontief girdi–çıktı modeli." };
+  const MATRIS = { id: "matris", ad: L("Matris hesapları", "Matrix calculations"), grup: "ek", not: L("Determinant, ters, çarpım, Ax = b, Leontief girdi–çıktı modeli.", "Determinant, inverse, product, Ax = b, Leontief input–output model.") };
   const tumu = () => [...ARACLAR, MATRIS];
   const bul = (id) => tumu().find((a) => a.id === id);
 
@@ -110,7 +111,7 @@
       }
       if (r.adimlar) {
         const k = el("div", { class: "kagit" });
-        k.innerHTML = '<p class="adim-baslik">Çözüm</p>' + isle(r.adimlar);
+        k.innerHTML = `<p class="adim-baslik">${L("Çözüm", "Solution")}</p>` + isle(r.adimlar);
         cikti.append(k);
       }
       cikti.append(sorDugmesi(arac, d, r));
@@ -119,8 +120,8 @@
     alanlariCiz();
     kutu.append(alanlar);
     kutu.append(el("div", { class: "dugmeler" },
-      el("button", { class: "buyuk-tus", type: "button", text: "Hesapla", onclick: () => { titret(); document.activeElement && document.activeElement.blur(); hesapla(); } }),
-      el("button", { class: "buyuk-tus gri", type: "button", text: "Örnek", "aria-label": "Örnek değerleri geri yükle", onclick: () => { Object.assign(d, varsayilan(arac)); sakla(); alanlariCiz(); hesapla(); } }),
+      el("button", { class: "buyuk-tus", type: "button", text: L("Hesapla", "Compute"), onclick: () => { titret(); document.activeElement && document.activeElement.blur(); hesapla(); } }),
+      el("button", { class: "buyuk-tus gri", type: "button", text: L("Örnek", "Example"), "aria-label": L("Örnek değerleri geri yükle", "Restore the example values"), onclick: () => { Object.assign(d, varsayilan(arac)); sakla(); alanlariCiz(); hesapla(); } }),
     ));
     kutu.append(cikti);
     kok.append(kutu);
@@ -130,7 +131,7 @@
 
   // fx-82ES tuş sırası: varsayılan KAPALI tek satır; açık/kapalı tercihi hatırlanır
   function fxCiz(r) {
-    const kutu = el("details", { class: "fx" }, el("summary", { text: "fx-82ES'te tuş sırası" }));
+    const kutu = el("details", { class: "fx" }, el("summary", { text: L("fx-82ES'te tuş sırası", "Key sequence on the fx-82ES") }));
     if (depo.al("fxAcik", false)) kutu.open = true;
     kutu.addEventListener("toggle", () => depo.koy("fxAcik", kutu.open));
     const ic = el("div", { class: "fx-ic" });
@@ -145,11 +146,11 @@
       ic.append(el("div", null, el("div", { class: "fx-ne", text: a.ne }), tuslar));
     }
     const notlar = [];
-    if (tum.includes("→")) notlar.push("→ sağ ok: üs ya da kök kutusundan çıkar. Unutursan sonra yazdığın her şey üssün içine girer.");
-    if (tum.includes("x■")) notlar.push("x■ üs tuşu.");
-    if (tum.includes("√■")) notlar.push("√■ karekök tuşu.");
-    if (tum.includes("SHIFT")) notlar.push("SHIFT ln = eˣ.");
-    if (tum.includes("(−)")) notlar.push("(−) eksi İŞARETİ tuşudur, çıkarma tuşu değil.");
+    if (tum.includes("→")) notlar.push(L("→ sağ ok: üs ya da kök kutusundan çıkar. Unutursan sonra yazdığın her şey üssün içine girer.", "→ right arrow: leaves the exponent or root box. Forget it and everything you type next goes into the exponent."));
+    if (tum.includes("x■")) notlar.push(L("x■ üs tuşu.", "x■ is the power key."));
+    if (tum.includes("√■")) notlar.push(L("√■ karekök tuşu.", "√■ is the square root key."));
+    if (tum.includes("SHIFT")) notlar.push(L("SHIFT ln = eˣ.", "SHIFT ln = eˣ."));
+    if (tum.includes("(−)")) notlar.push(L("(−) eksi İŞARETİ tuşudur, çıkarma tuşu değil.", "(−) is the negative SIGN key, not the subtraction key."));
     if (r.fxNot) notlar.push(r.fxNot);
     if (notlar.length) ic.append(el("p", { class: "fx-not", text: notlar.join(" ") }));
     kutu.append(ic);
@@ -159,14 +160,14 @@
   function sorDugmesi(arac, d, r, hata) {
     const girdiler = arac.alanlar.filter((a) => !a.kosul || a.kosul(d)).map((a) => {
       const v = a.tur === "secim" ? (a.secenekler.find((s) => String(s[0]) === String(d[a.id])) || [0, d[a.id]])[1] : d[a.id];
-      return `${a.etiket}: ${v === "" || v == null ? "(boş)" : v}`;
+      return `${a.etiket}: ${v === "" || v == null ? L("(boş)", "(empty)") : v}`;
     }).join("\n");
-    const sonuc = r ? r.satirlar.map((s) => `${s.etiket}: ${s.deger}`).join("\n") : `Hata: ${hata}`;
-    const metin = `Marjinal'de “${arac.ad}” aracını kullandım.\n${girdiler}\n\nÇıkan sonuç:\n${sonuc}\n\nTakıldığım yer: `;
+    const sonuc = r ? r.satirlar.map((s) => `${s.etiket}: ${s.deger}`).join("\n") : L(`Hata: ${hata}`, `Error: ${hata}`);
+    const metin = L(`Marjinal'de “${arac.ad}” aracını kullandım.\n${girdiler}\n\nÇıkan sonuç:\n${sonuc}\n\nTakıldığım yer: `, `I used the “${arac.ad}” tool in Marjinal.\n${girdiler}\n\nResult:\n${sonuc}\n\nWhere I'm stuck: `);
     const k = el("div", { class: "dugmeler" },
-      el("button", { class: "buyuk-tus gri", style: "flex:1", type: "button", text: "DeepSeek'e sor", onclick: () => Uyg.sorHazirla(metin) }));
+      el("button", { class: "buyuk-tus gri", style: "flex:1", type: "button", text: L("DeepSeek'e sor", "Ask DeepSeek"), onclick: () => Uyg.sorHazirla(metin) }));
     if (arac.konu && window.KONULAR && KONULAR.find((x) => x.id === arac.konu)) {
-      k.append(el("button", { class: "buyuk-tus gri", style: "flex:1", type: "button", text: "Konuyu oku", onclick: () => Uyg.git("konular/" + arac.konu) }));
+      k.append(el("button", { class: "buyuk-tus gri", style: "flex:1", type: "button", text: L("Konuyu oku", "Read the topic"), onclick: () => Uyg.git("konular/" + arac.konu) }));
     }
     return k;
   }

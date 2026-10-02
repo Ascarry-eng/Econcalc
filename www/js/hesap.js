@@ -3,6 +3,7 @@
 (function () {
   "use strict";
   const { depo, el, titret } = Uyg;
+  const L = window.L || ((tr) => tr);
 
   const OK_SOL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M14 6l-6 6 6 6"/></svg>';
   const OK_SAG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M10 6l6 6-6 6"/></svg>';
@@ -12,9 +13,9 @@
   const TUSLAR = [
     { id: "kaydir", ana: "2nd", s: "turuncu kucuk kaydir-tus" },
     { id: "aci", ana: "DEG", s: "kucuk" },
-    { id: "sol", ana: OK_SOL, s: "kucuk", etiket: "İmleç sola" },
-    { id: "sag", ana: OK_SAG, s: "kucuk", etiket: "İmleç sağa" },
-    { id: "gecmis", ana: "Geçmiş", s: "kucuk" },
+    { id: "sol", ana: OK_SOL, s: "kucuk", etiket: L("İmleç sola", "Cursor left") },
+    { id: "sag", ana: OK_SAG, s: "kucuk", etiket: L("İmleç sağa", "Cursor right") },
+    { id: "gecmis", ana: L("Geçmiş", "History"), s: "kucuk" },
 
     { ana: "sin", j: "sin(", ikinci: "sin⁻¹", j2: "sin⁻¹(" },
     { ana: "cos", j: "cos(", ikinci: "cos⁻¹", j2: "cos⁻¹(" },
@@ -22,8 +23,8 @@
     { ana: "ln", j: "ln(", ikinci: "|x|", j2: "abs(" },
     { ana: "log", j: "log(", ikinci: "10ˣ", j2: "10^(" },
 
-    { ana: "x<sup>2</sup>", j: "²", ikinci: "x³", j2: "³", etiket: "kare" },
-    { ana: "x<sup>y</sup>", j: "^", ikinci: "ʸ√x", j2: "^(1/", etiket: "üs" },
+    { ana: "x<sup>2</sup>", j: "²", ikinci: "x³", j2: "³", etiket: L("kare", "squared") },
+    { ana: "x<sup>y</sup>", j: "^", ikinci: "ʸ√x", j2: "^(1/", etiket: L("üs", "power") },
     { ana: "√", j: "√(", ikinci: "∛", j2: "∛(" },
     { ana: "1/x", j: "⁻¹", ikinci: "n!", j2: "!" },
     { ana: "π", j: "π", ikinci: "e", j2: "e" },
@@ -31,11 +32,11 @@
     { ana: "(", j: "(" },
     { ana: ")", j: ")" },
     { ana: "%", j: "%" },
-    { ana: "e<sup>x</sup>", j: "e^(", etiket: "e üssü" },
+    { ana: "e<sup>x</sup>", j: "e^(", etiket: L("e üssü", "e to the power") },
     { ana: "Ans", j: "Ans" },
 
     { ana: "7", j: "7", s: "acik" }, { ana: "8", j: "8", s: "acik" }, { ana: "9", j: "9", s: "acik" },
-    { id: "sil", ana: SIL, etiket: "Sil" },
+    { id: "sil", ana: SIL, etiket: L("Sil", "Delete") },
     { id: "ac", ana: "AC" },
 
     { ana: "4", j: "4", s: "acik" }, { ana: "5", j: "5", s: "acik" }, { ana: "6", j: "6", s: "acik" },
@@ -45,7 +46,7 @@
     { ana: "+", j: "+", s: "islem" }, { ana: "−", j: "−", s: "islem" },
 
     { ana: "0", j: "0", s: "acik" }, { ana: ".", j: ".", s: "acik" },
-    { ana: "EXP", j: "E", etiket: "on üzeri" },
+    { ana: "EXP", j: "E", etiket: L("on üzeri", "times ten to the power") },
     { id: "esit", ana: "=", s: "turuncu esittir" },
   ];
 
@@ -136,10 +137,10 @@
     if (!durum.jeton.length) return ciz();
     let r;
     try { r = degerlendir(); }
-    catch (e) { return ciz({ hata: "Söz dizimi hatası" }); }
+    catch (e) { return ciz({ hata: L("Söz dizimi hatası", "Syntax error") }); }
     if (!r || r.bos) return ciz();
     if (!Number.isFinite(r.deger)) {
-      return ciz({ hata: Number.isNaN(r.deger) ? "Tanımsız (ör. negatifin kökü, 0'ın logu)" : "Sonsuz — sıfıra bölme olabilir" });
+      return ciz({ hata: Number.isNaN(r.deger) ? L("Tanımsız (ör. negatifin kökü, 0'ın logu)", "Undefined (e.g. root of a negative, log of 0)") : L("Sonsuz — sıfıra bölme olabilir", "Infinite — maybe division by zero") });
     }
     const ifade = durum.jeton.join("");
     durum.ans = r.deger;
@@ -176,7 +177,7 @@
   function gecmisAc() {
     const liste = document.getElementById("gecmisListe");
     liste.innerHTML = "";
-    if (!durum.gecmis.length) liste.append(el("div", { class: "bos-not", text: "Henüz hesap yok. = tuşuna bastığın her işlem buraya düşer." }));
+    if (!durum.gecmis.length) liste.append(el("div", { class: "bos-not", text: L("Henüz hesap yok. = tuşuna bastığın her işlem buraya düşer.", "No calculations yet. Everything you finish with = lands here.") }));
     for (const g of durum.gecmis) {
       liste.append(el("button", {
         class: "gecmis-ogesi",

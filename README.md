@@ -2,7 +2,9 @@
 
 İktisat birinci sınıf **Mathematics I** dersi için Android hesap makinesi: bilimsel hesap, ders konularına
 göre dizilmiş hesap araçları, haftalık konu anlatımları ve takılınca soru sorulabilen DeepSeek bağlantısı.
-Tamamen çevrimdışı çalışır; internet yalnız soru sorarken gerekir.
+Tamamen çevrimdışı çalışır; internet yalnız soru sorarken gerekir. Arayüz **Türkçe ve İngilizce** (Ayarlar → Dil / Language).
+
+*In English:* an offline Android calculator for first-year **Mathematics I** (economics): a scientific calculator, 23 economics tools with step-by-step solutions and graphs, Casio fx-82ES key sequences, 14 weekly topic pages and an “Ask DeepSeek” chat that also reads photos. The whole interface switches to English in Settings → Dil / Language. Download the APK from [Releases](../../releases) or try it in the browser: https://ascarry-eng.github.io/Econcalc/
 
 <p>
 <img src="docs/hesap.png" width="200" alt="Bilimsel hesap makinesi">
@@ -31,7 +33,8 @@ kaynak" izni ister; Play Protect uyarırsa "Yine de yükle". Android 8.0 ve üst
 
 ## Geliştirme
 - `www/` — uygulamanın kendisi (HTML/CSS/JS). Masaüstünde `www/index.html` doğrudan açılır.
-  - `js/motor.js` hesap çekirdeği · `js/araclar_tanim.js` araçların hesabı · `js/konular.js` ders içeriği
+  - `js/motor.js` hesap çekirdeği · `js/araclar_tanim.js` araçların hesabı · `js/konular.js` ders içeriği (İngilizcesi `js/konular_en.js`)
+  - Metinler yerinde iki dilli yazılır: `L("Türkçe", "English")` (`js/dil.js`)
 - `apk/` — Android kabuğu (tek WebView) ve Gradle'sız derleme betiği `derle.py`
 - `test/` — testler
 - `_npm/` — kütüphanelerin kaynağı; `cd _npm && npm install`, ardından `node kutuphane_kopyala.js`
@@ -42,9 +45,11 @@ node test/motor_test.js
 node test/araclar_test.js        # fx-82ES tuş sıraları bir öykünücüde de sınanır
 node test/etkilesim_test.js      # --api: gerçek DeepSeek çağrısı (DEEPSEEK_API_KEY gerekir)
 node test/ekran_test.js <klasör> # telefon boyutunda ekran görüntüleri
+MARJINAL_DIL=en node test/araclar_test.js   # İngilizce: araçlarda Türkçe sızıntı taraması
+node test/dil_test.js           # İngilizce arayüzü tarayıcıda baştan sona dolaşır, Türkçe arar
 ```
 
-APK derlemek: `python apk/derle.py` → `apk/cikti/Marjinal.apk`. Gerekenler: JDK 17+ (`JAVA_HOME`),
+APK derlemek: `python apk/derle.py` → `apk/cikti/Marjinal.apk`. Yayınlamak: `python apk/yayinla.py "notlar"`. Gerekenler: JDK 17+ (`JAVA_HOME`),
 `apk/sdk/` altında Android build-tools 35.0.1 ve platform android-35 (depoda yok, Google'dan indirilir).
 İmza anahtarı (`apk/marjinal.jks`) ve şifresi (`apk/imza_sifre.txt`) depoda değildir; yoksa ilk derlemede
 yenisi üretilir. Aynı telefondaki uygulamayı güncellemek için hep aynı anahtar kullanılmalıdır.

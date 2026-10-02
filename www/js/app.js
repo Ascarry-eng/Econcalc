@@ -3,6 +3,7 @@
   "use strict";
 
   // ---------------------------------------------------------------- depo (localStorage; erişim atabilir)
+  const L = window.L || ((tr) => tr);
   const ON = "marjinal.";
   const depo = {
     al(k, varsayilan) {
@@ -178,24 +179,24 @@
     const durum = document.getElementById("anahtarDurum");
     document.getElementById("ayarTus").addEventListener("click", () => {
       alan.value = depo.al("anahtar", "") || "";
-      durum.textContent = alan.value ? "Kayıtlı bir anahtar var." : "Henüz anahtar yok.";
+      durum.textContent = alan.value ? L("Kayıtlı bir anahtar var.", "A key is saved.") : L("Henüz anahtar yok.", "No key yet.");
       panel.classList.add("acik");
     });
     document.getElementById("ayarKapat").addEventListener("click", () => panel.classList.remove("acik"));
     document.getElementById("anahtarGoster").addEventListener("click", (e) => {
       alan.type = alan.type === "password" ? "text" : "password";
-      e.currentTarget.textContent = alan.type === "password" ? "Göster" : "Gizle";
+      e.currentTarget.textContent = alan.type === "password" ? L("Göster", "Show") : L("Gizle", "Hide");
     });
     document.getElementById("anahtarKaydet").addEventListener("click", async () => {
       const k = alan.value.trim();
       depo.koy("anahtar", k);
-      if (!k) { durum.textContent = "Anahtar silindi."; return; }
-      durum.textContent = "Sınanıyor…";
+      if (!k) { durum.textContent = L("Anahtar silindi.", "Key removed."); return; }
+      durum.textContent = L("Sınanıyor…", "Testing…");
       try {
         const r = await fetch("https://api.deepseek.com/models", { headers: { Authorization: "Bearer " + k } });
-        durum.textContent = r.ok ? "Kaydedildi, anahtar çalışıyor." : r.status === 401 ? "Kaydedildi ama DeepSeek anahtarı reddetti (401). Doğru kopyaladığından emin ol." : `Kaydedildi; DeepSeek ${r.status} döndü.`;
+        durum.textContent = r.ok ? L("Kaydedildi, anahtar çalışıyor.", "Saved; the key works.") : r.status === 401 ? L("Kaydedildi ama DeepSeek anahtarı reddetti (401). Doğru kopyaladığından emin ol.", "Saved, but DeepSeek rejected the key (401). Make sure you copied it correctly.") : L(`Kaydedildi; DeepSeek ${r.status} döndü.`, `Saved; DeepSeek returned ${r.status}.`);
       } catch (e) {
-        durum.textContent = "Kaydedildi; internet olmadığı için sınanamadı.";
+        durum.textContent = L("Kaydedildi; internet olmadığı için sınanamadı.", "Saved; could not test it without an internet connection.");
       }
     });
     const secimKur = (id, anahtar, varsayilan, cevir = (v) => v) => {
@@ -212,6 +213,21 @@
     };
     secimKur("titresimSecim", "titresim", true, (v) => v === "1" || v === true);
     secimKur("eforSecim", "efor", "high");
+    // Dil değişince sayfa yeniden yüklenir: metinler açılışta bir kez kurulur
+    document.getElementById("dilSecim").addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b || b.dataset.v === window.DIL) return;
+      depo.koy("dil", b.dataset.v);
+      location.reload();
+    });
+    document.querySelectorAll("#dilSecim button").forEach((b) => b.classList.toggle("secili", b.dataset.v === window.DIL));
+  }
+
+  // index.html'deki sabit metinlerin İngilizcesi: data-en (metin), data-en-ph (placeholder), data-en-aria
+  function ceviriUygula() {
+    if (window.DIL !== "en") return;
+    document.querySelectorAll("[data-en]").forEach((e) => { e.textContent = e.dataset.en; });
+    document.querySelectorAll("[data-en-ph]").forEach((e) => { e.placeholder = e.dataset.enPh; });
+    document.querySelectorAll("[data-en-aria]").forEach((e) => { e.setAttribute("aria-label", e.dataset.enAria); });
   }
 
   // ---------------------------------------------------------------- başlat
@@ -222,6 +238,7 @@
       git(b.dataset.mod);
     });
     document.getElementById("geriTus").addEventListener("click", () => window.geriTusu());
+    ceviriUygula();
     serit.kur();
     ayarlariKur();
     for (const g of Object.values(gorunumler)) if (g.kur) g.kur();

@@ -11,6 +11,7 @@
 
   // predictable: sqrt(-1) karmaşık sayı değil NaN döner — iktisatta reel sayılarla çalışıyoruz
   const M = math.create(math.all, { predictable: true });
+  const L = kok.L || ((tr) => tr);
 
   // ---------------------------------------------------------------- ifade çevirisi
   const ADLAR = ["arcsin", "arccos", "arctan", "asinh", "acosh", "atanh", "nthRoot", "sinh", "cosh", "tanh",
@@ -69,11 +70,11 @@
   // Tek değişkenli fonksiyon derle. tercih: değişken yoksa kullanılacak ad.
   function fonk(girdi, tercih) {
     const metin = normalle(girdi);
-    if (!metin) throw new Error("İfade boş.");
+    if (!metin) throw new Error(L("İfade boş.", "The expression is empty."));
     let dugum;
-    try { dugum = M.parse(metin); } catch (e) { throw new Error("İfade okunamadı: " + turkceHata(e.message)); }
+    try { dugum = M.parse(metin); } catch (e) { throw new Error(L("İfade okunamadı: ", "Could not read the expression: ") + turkceHata(e.message)); }
     const vars = serbest(dugum);
-    if (vars.length > 1) throw new Error("Tek değişken bekleniyordu, ifadede birden fazla var: " + vars.join(", "));
+    if (vars.length > 1) throw new Error(L("Tek değişken bekleniyordu, ifadede birden fazla var: ", "Expected one variable, but the expression has several: ") + vars.join(", "));
     const v = vars[0] || tercih || "x";
     const kod = dugum.compile();
     const f = (x) => { try { return sayiyaCevir(kod.evaluate({ [v]: x })); } catch (e) { return NaN; } };
@@ -84,7 +85,7 @@
   // iki ifadeyi birleştirirken metni tekrar normalle'den geçirmek yerine düğümleri birleştir.
   function fonkDugum(dugum, tercih) {
     const vars = serbest(dugum);
-    if (vars.length > 1) throw new Error("Tek değişken bekleniyordu, ifadede birden fazla var: " + vars.join(", "));
+    if (vars.length > 1) throw new Error(L("Tek değişken bekleniyordu, ifadede birden fazla var: ", "Expected one variable, but the expression has several: ") + vars.join(", "));
     const v = vars[0] || tercih || "x";
     const kod = dugum.compile();
     const f = (x) => { try { return sayiyaCevir(kod.evaluate({ [v]: x })); } catch (e) { return NaN; } };
@@ -94,7 +95,7 @@
   // İki fonksiyondan birleşik düğüm: birlestir(F, G, (a, b) => `(${a}) - (${b})`)
   function birlestir(F, G, sablon, tercih) {
     if (F.v !== G.v && serbest(F.dugum).length && serbest(G.dugum).length) {
-      throw new Error(`İki fonksiyonda aynı değişkeni kullan (birinde ${F.v}, ötekinde ${G.v} var).`);
+      throw new Error(L(`İki fonksiyonda aynı değişkeni kullan (birinde ${F.v}, ötekinde ${G.v} var).`, `Use the same variable in both functions (one has ${F.v}, the other ${G.v}).`));
     }
     const v = serbest(F.dugum).length ? F.v : G.v;
     const dugum = M.parse(sablon(F.dugum.toString({ implicit: "show" }), G.dugum.toString({ implicit: "show" }), v));
@@ -104,9 +105,9 @@
   // Çok değişkenli derleme (kısmi türev, denklem sistemi için)
   function cokFonk(girdi) {
     const metin = normalle(girdi);
-    if (!metin) throw new Error("İfade boş.");
+    if (!metin) throw new Error(L("İfade boş.", "The expression is empty."));
     let dugum;
-    try { dugum = M.parse(metin); } catch (e) { throw new Error("İfade okunamadı: " + turkceHata(e.message)); }
+    try { dugum = M.parse(metin); } catch (e) { throw new Error(L("İfade okunamadı: ", "Could not read the expression: ") + turkceHata(e.message)); }
     const vars = serbest(dugum);
     const kod = dugum.compile();
     const f = (kapsam) => { try { return sayiyaCevir(kod.evaluate({ ...kapsam })); } catch (e) { return NaN; } };
@@ -118,18 +119,19 @@
     let t = String(girdi == null ? "" : girdi).trim();
     if (t === "") {
       if (varsayilan !== undefined) return varsayilan;
-      throw new Error("Bir alan boş bırakılmış.");
+      throw new Error(L("Bir alan boş bırakılmış.", "A field was left empty."));
     }
     if (/^[+-]?\d+,\d+$/.test(t)) t = t.replace(",", ".");
     const metin = normalle(t);
     let r;
-    try { r = M.evaluate(metin); } catch (e) { throw new Error(`"${girdi}" sayı olarak okunamadı.`); }
+    try { r = M.evaluate(metin); } catch (e) { throw new Error(L(`"${girdi}" sayı olarak okunamadı.`, `"${girdi}" could not be read as a number.`)); }
     const s = sayiyaCevir(r);
-    if (Number.isNaN(s)) throw new Error(`"${girdi}" bir sayı değil.`);
+    if (Number.isNaN(s)) throw new Error(L(`"${girdi}" bir sayı değil.`, `"${girdi}" is not a number.`));
     return s;
   }
 
   function turkceHata(m) {
+    if (L("tr", "en") === "en") return String(m).replace(/\(char \d+\)/i, "").trim();
     return String(m)
       .replace(/Unexpected end of expression/i, "ifade yarım kalmış")
       .replace(/Parenthesis \) expected/i, "kapanmamış parantez var")
@@ -161,7 +163,7 @@
   // ---------------------------------------------------------------- sembolik
   function turevDugum(dugum, v) {
     let d;
-    try { d = M.derivative(dugum, v); } catch (e) { throw new Error("Bu ifadenin türevi alınamadı: " + turkceHata(e.message)); }
+    try { d = M.derivative(dugum, v); } catch (e) { throw new Error(L("Bu ifadenin türevi alınamadı: ", "Could not differentiate this expression: ") + turkceHata(e.message)); }
     try { d = M.simplify(d); } catch (e) { /* sadeleşmezse ham kalsın */ }
     return d;
   }
@@ -599,25 +601,26 @@
     const m = A.length, n = A[0].length;
     const sinir = sutunSiniri == null ? n : sutunSiniri;
     const adimlar = [];
+    const SR = L("S", "R"); // satır / row
     let det = ops.bir(), r = 0;
     const pivotlar = [];
     for (let c = 0; c < sinir && r < m; c++) {
       let p = -1;
       for (let i = r; i < m; i++) if (!ops.sifirMi(A[i][c])) { p = i; break; }
       if (p < 0) { det = ops.sifir(); continue; }
-      if (p !== r) { [A[p], A[r]] = [A[r], A[p]]; det = ops.neg(det); adimlar.push(`S${r + 1} ↔ S${p + 1}`); }
+      if (p !== r) { [A[p], A[r]] = [A[r], A[p]]; det = ops.neg(det); adimlar.push(`${SR}${r + 1} ↔ ${SR}${p + 1}`); }
       const piv = A[r][c];
       det = ops.carp(det, piv);
       if (!ops.sifirMi(ops.cikar(piv, ops.bir()))) {
         A[r] = A[r].map((x) => ops.bol(x, piv));
-        adimlar.push(`S${r + 1} ← S${r + 1} ÷ ${ops.yaz(piv)}`);
+        adimlar.push(`${SR}${r + 1} ← ${SR}${r + 1} ÷ ${ops.yaz(piv)}`);
       }
       for (let i = 0; i < m; i++) {
         if (i === r || ops.sifirMi(A[i][c])) continue;
         const k = A[i][c];
         A[i] = A[i].map((x, j) => ops.cikar(x, ops.carp(k, A[r][j])));
         const ks = ops.yaz(k);
-        adimlar.push(`S${i + 1} ← S${i + 1} − ${/^-|\//.test(ks) ? "(" + ks + ")" : ks}·S${r + 1}`);
+        adimlar.push(`${SR}${i + 1} ← ${SR}${i + 1} − ${/^-|\//.test(ks) ? "(" + ks + ")" : ks}·${SR}${r + 1}`);
       }
       pivotlar.push(c);
       r++;
@@ -661,7 +664,7 @@
   function bicim(x, basamak = 10) {
     if (x === Infinity) return "∞";
     if (x === -Infinity) return "−∞";
-    if (typeof x !== "number" || Number.isNaN(x)) return "tanımsız";
+    if (typeof x !== "number" || Number.isNaN(x)) return L("tanımsız", "undefined");
     if (x === 0 || Math.abs(x) < 1e-13) return "0";
     const t = Math.round(x);
     if (Math.abs(x - t) < 1e-10 * Math.max(1, Math.abs(x)) && Math.abs(t) < 1e15) return eksi(String(t));

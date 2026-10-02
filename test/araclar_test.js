@@ -1,11 +1,15 @@
 // araclar_test.js — her aracın HER modu varsayılan örnekle hatasız hesaplanmalı + bilinen cevaplar.
-// Kullanım: node test/araclar_test.js
+// Kullanım: node test/araclar_test.js                 (Türkçe: bilinen cevaplar etiketle aranır)
+//           MARJINAL_DIL=en node test/araclar_test.js   (İngilizce: Türkçe harf sızıntısı taranır)
 const fs = require("fs");
 const vm = require("vm");
-for (const f of ["lib/math.js", "lib/nerdamer.js", "js/motor.js", "js/araclar_tanim.js"]) {
+globalThis.MARJINAL_DIL = process.env.MARJINAL_DIL || "tr";
+for (const f of ["js/dil.js", "lib/math.js", "lib/nerdamer.js", "js/motor.js", "js/araclar_tanim.js"]) {
   vm.runInThisContext(fs.readFileSync(`${__dirname}/../www/${f}`, "utf8"), { filename: f });
 }
 const { ARACLAR, Motor } = globalThis;
+const EN = globalThis.DIL === "en";
+console.log("dil:", globalThis.DIL);
 
 let gecti = 0, kaldi = 0;
 const ok = (ad, kosul, ek = "") => { kosul ? gecti++ : kaldi++; if (!kosul) console.log("KALDI", ad, ek); };
@@ -40,7 +44,8 @@ for (const arac of ARACLAR) {
   }
 }
 
-// 2) Bilinen cevaplar
+// 2) Bilinen cevaplar (etiketle aranır: yalnız Türkçede)
+if (!EN) {
 { const r = kos("denge"); ok("denge Q*", yakin(sayi(deger(r, "Denge miktarı")), 30)); ok("denge P*", yakin(sayi(deger(r, "Denge fiyatı")), 40));
   ok("vergi Qt", yakin(sayi(deger(r, "Vergili miktar")), 28)); ok("vergi Pc", yakin(sayi(deger(r, "Tüketicinin ödediği")), 44));
   ok("vergi geliri", yakin(sayi(deger(r, "Vergi geliri")), 168)); ok("ölü ağırlık", yakin(sayi(deger(r, "Ölü ağırlık")), 6, 1e-8)); }
@@ -89,6 +94,7 @@ for (const arac of ARACLAR) {
 { const r = kos("grafik"); ok("grafik kesişim (20,60)", deger(r, "kesişim").includes("(20, 60)")); }
 { const r = kos("denklem"); ok("denklem kökleri 1,2,3", ["x₁", "x₂", "x₃"].every((k, i) => yakin(sayi(deger(r, k)), i + 1))); }
 { const r = kos("dogru"); ok("doğru eğim -2", yakin(sayi(deger(r, "Eğim")), -2)); ok("doğru b 100", yakin(sayi(deger(r, "y-kesişimi")), 100)); }
+}
 
 // 3) fx-82ES tuş sıraları: Doğal Gösterim öykünücüsünde tuşlanınca aracın sonucunu vermeli
 function fx82(tuslar, ans = 0) {
@@ -138,6 +144,65 @@ ok("fx dizisi en az 25 adım sınandı", fxSayisi >= 25, String(fxSayisi));
   const a = kos("buyume").fx[0];
   const bozuk = a.tuslar.filter((t) => t !== "→");
   ok("→ unutulunca öykünücü YANLIŞ sonuç verir (kapı kör değil)", !yakin(fx82(bozuk), a.sonuc, 1e-3), String(fx82(bozuk)));
+}
+
+// 4) İngilizcede Türkçe harf sızıntısı: aracın her metni, her modu, hata mesajları
+if (EN) {
+  // Özel harf taraması "faiz", "taksit", "yok" gibi harfsiz Türkçe kelimeleri göremez: onlar için sözcük listesi
+  const TR_HARF = /[çğıöşüÇĞİÖŞÜâÂ]/;
+  const TR_SOZ = /\b(yok|faiz|taksit|kalan|anapara|talep|arz|denge|fiyat|miktar|vergi|maliyet|gelir|toplam|nokta|ve|ile|bir|iki|icin|kadar|yani|ama|olur|tablo|hesapla|dikey|yatay|kritik|sabit|yerel|oran|kredi|yatirim|proje|karar|sinir|yorum|tepe|teget|dogru|denklem|kok|kokler|egim|deger|sonuc|aralik|alt|ust)\b/i;
+  const sizinti = [];
+  let taranan = 0;
+  const tara = (yer, metin) => {
+    if (metin == null) return;
+    taranan++;
+    const t = String(metin).replace(/\\[a-zA-Z]+/g, " "); // LaTeX komut adları (\text, \frac) kelime sayılmasın
+    const h = t.match(/.{0,40}[çğıöşüÇĞİÖŞÜâÂ].{0,40}/) || t.match(new RegExp(".{0,40}" + TR_SOZ.source + ".{0,40}", "i"));
+    if (h) sizinti.push(`${yer}: ${h[0]}`);
+  };
+  { // Tarayıcının kendisi kör değil mi: bilinen Türkçe cümleleri yakalamalı, İngilizceyi geçirmeli
+    const once = sizinti.length;
+    tara("öz-sınama", "Toplam faiz"); tara("öz-sınama", "Kalan borç yok"); const yakaladi = sizinti.length - once === 2;
+    tara("öz-sınama", "Total interest on the remaining balance"); const gecirdi = sizinti.length - once === 2;
+    sizinti.length = once; taranan = 0;
+    ok("sızıntı tarayıcısı Türkçeyi yakalar, İngilizceyi geçirir", yakaladi && gecirdi);
+  }
+  for (const g of globalThis.ARAC_GRUPLARI) { tara("grup", g.hafta); tara("grup", g.ad); }
+  for (const [id, m] of fxDurumlari) {
+    const arac = ARACLAR.find((a) => a.id === id);
+    const d = varsayilan(arac, m);
+    tara(`${id} ad`, arac.ad); tara(`${id} not`, arac.not);
+    for (const a of arac.alanlar) {
+      tara(`${id} alan`, a.etiket);
+      tara(`${id} ipucu`, typeof a.ipucu === "function" ? a.ipucu(d) : a.ipucu);
+      for (const [, yazi] of a.secenekler || []) tara(`${id} seçenek`, yazi);
+    }
+    let r;
+    try { r = kos(id, m); } catch (e) { tara(`${id} hata`, e.message); continue; }
+    for (const s_ of r.satirlar) { tara(`${id} etiket`, s_.etiket); tara(`${id} değer`, s_.deger); }
+    tara(`${id} adımlar`, r.adimlar);
+    for (const a of r.fx || []) tara(`${id} fx`, a.ne);
+    tara(`${id} fxNot`, r.fxNot);
+    for (const g of r.grafikler || []) {
+      for (const e of [...(g.egriler || []), ...(g.parametrik || [])]) { tara(`${id} eğri`, e.ad); tara(`${id} eğri`, e.kisa); }
+      for (const n of g.noktalar || []) tara(`${id} nokta`, n.etiket);
+      if (g.eksen) { tara(`${id} eksen`, g.eksen.x); tara(`${id} eksen`, g.eksen.y); }
+    }
+    if (r.tablo) r.tablo.basliklar.forEach((b) => tara(`${id} tablo`, b));
+  }
+  // Hata yolları: her alan boş, ve bilinen hatalı girdiler
+  const hataGirdileri = [
+    ["sistem", { s: "Qd = 100 - 2P" }], ["sistem", { s: "x^2 + y = 1\nx - y = 0" }], ["sistem", { s: "x + y" }], ["tvm", { pmt: "5" }], ["tvm", { n: "", pmt: "" }],
+    ["log", { mod: "log", taban: "1" }], ["ikinci", { a: "0" }], ["denge", { talep: "-5 - Q" }], ["kar", { p: "100 + 2Q" }], ["grafik", { f1: "", f2: "", f3: "" }],
+    ["turev", { f: "x^2 +" }], ["turev", { f: "K^0.3 L^0.7", x0: "K=1" }], ["denklem", { f: "x y" }], ["esneklik", { mod: "yay", p2: "10" }], ["integral", { f: "1/x", a: "-1", b: "1" }],
+  ];
+  for (const arac of ARACLAR) {
+    const bosD = Object.fromEntries(arac.alanlar.map((a) => [a.id, a.tur === "secim" ? a.v : ""]));
+    try { arac.hesapla(bosD); } catch (e) { tara(`${arac.id} boş-hata`, e.message); }
+  }
+  for (const [id, m] of hataGirdileri) { try { kos(id, m); } catch (e) { tara(`${id} hata`, e.message); } }
+  ok("sızıntı taraması yeterince metin gördü", taranan > 500, String(taranan));
+  ok("İngilizcede Türkçe sızıntısı yok", sizinti.length === 0, "\n  " + [...new Set(sizinti)].slice(0, 40).join("\n  "));
 }
 
 console.log(`\n${gecti} geçti, ${kaldi} kaldı`);
